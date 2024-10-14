@@ -22,10 +22,9 @@ class BaseBot(Bot):
         # self.load_extension("bot.events")
         self.load_extension("bot.extensions")
 
-    async def master_guild(self):
-        return self.get_guild(1219937222661509121) or await self.fetch_guild(
-            1219937222661509121
-        )
+    @property
+    def master_guild(self):
+        return self.get_guild(1219937222661509121)
 
     async def on_ready(self):
         _log.info("Logged in as: %s", self.user.name)

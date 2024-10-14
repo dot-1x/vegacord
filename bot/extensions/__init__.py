@@ -4,7 +4,7 @@ from discord import Cog
 from logs.log import get_logger
 
 
-from .booster import BoosterExt
+from bot.extensions.booster import BoosterExt
 
 if TYPE_CHECKING:
     from bot.extensions.abcextension import ABCExtension

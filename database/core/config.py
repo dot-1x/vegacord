@@ -58,5 +58,16 @@ class Settings(BaseSettings):
             )
         )
 
+    @computed_field
+    @cached_property
+    def SQLITE_DB_URI(self) -> str:  # pylint: disable=invalid-name
+        return str(
+            MultiHostUrl.build(
+                scheme="sqlite+aiosqlite",
+                host="",
+                path="database/vegacord.sqlite",
+            )
+        )
+
 
 settings: Settings = Settings()
