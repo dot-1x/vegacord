@@ -2,10 +2,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import discord
-from discord import guild_only, slash_command
+from discord import guild_only, option, slash_command
 
 from bot.extensions.abcextension import ABCExtension
 from bot.logs.custom_logger import BotLogger
+from bot.utils.decorators import is_admin
 from bot.utils.generators import chunk_list
 from bot.utils.misc import build_embed
 from bot.utils.dbutils import update_booster
@@ -29,10 +30,9 @@ class BoosterExt(discord.Cog, ABCExtension):
     @discord.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
         boost_channel = self.bot.master_guild.get_channel(1219937225618227233)
-        boost_role_after = after.get_role(self.bot.master_guild.premium_subscriber_role)
-        boost_role_before = before.get_role(
-            self.bot.master_guild.premium_subscriber_role
-        )
+        premium_role = self.bot.master_guild.premium_subscriber_role
+        boost_role_after = after.get_role(premium_role.id)
+        boost_role_before = before.get_role(premium_role.id)
         embed = build_embed(title="Booster notice!")
         if boost_role_after and boost_role_before is None:
             boost_slot = 20 - len(self.bot.master_guild.premium_subscribers)
@@ -44,13 +44,13 @@ class BoosterExt(discord.Cog, ABCExtension):
             )
             embed.colour = discord.Colour.nitro_pink()
             boost_channel.send(embed=embed)
-            await update_booster(after.id, True)
+            await update_booster(after.id, True, after.premium_since)
 
         if boost_role_before and boost_role_after is None:
             embed.description = f"_{after.mention} stopped their server boost!_"
             embed.colour = discord.Colour.dark_red()
             boost_channel.send(embed=embed)
-            await update_booster(after.id, False)
+            await update_booster(after.id, False, after.premium_since)
 
     @guild_only()
     @slash_command(
@@ -64,7 +64,7 @@ class BoosterExt(discord.Cog, ABCExtension):
             for booster in chunk_list(boosters)
         )
         embed = discord.Embed(
-            title="Current valid booster reward", color=discord.Colour.nitro_pink()
+            title="Current booster", color=discord.Colour.nitro_pink()
         )
         embed.description = booster_text
 
@@ -73,3 +73,21 @@ class BoosterExt(discord.Cog, ABCExtension):
             ephemeral=True,
             embed=embed,
         )
+
+    @is_admin()
+    @guild_only()
+    @slash_command(
+        name="register-booster", description="Register a member to booster list"
+    )
+    @option(
+        name="member",
+        type=discord.Member,
+        description="Select member to register booster list on database",
+    )
+    async def register_booster(
+        self, ctx: discord.ApplicationContext, member: discord.Member
+    ):
+        await ctx.defer(ephemeral=True)
+        if member.get_role(ctx.interaction.guild.premium_subscriber_role.id) is None:
+            return await ctx.respond("user is not valid booster", ephemeral=True)
+        await ctx.respond("sucessfully added user to booster database", ephemeral=True)
