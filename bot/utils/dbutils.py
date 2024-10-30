@@ -1,9 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import or_, select
 
 from database.core import session
-from database.models.member_model import Booster
+from database.models.member_model import Booster, Member as MemberModel
 
 
 async def update_booster(
@@ -39,3 +39,16 @@ async def get_valid_booster():
             .limit(20)
         )
         return result.all()
+
+
+async def update_member(userid: int, ign: str, server: int):
+    async with session.session_maker() as dbsession:
+        member = await dbsession.get(MemberModel, userid)
+        if member is None:
+            member = MemberModel(userid=userid, ingame=ign, server=server)
+        else:
+            member.userid = userid
+            member.ingame = ign
+            member.server = server
+            member.has_changed = True
+        await dbsession.commit()

@@ -19,3 +19,4 @@ class Member(BaseModel):
     userid: Mapped[int] = mapped_column(BigInteger, primary_key=True)
     ingame: Mapped[str] = mapped_column()
     server: Mapped[int] = mapped_column()
+    has_changed: Mapped[bool] = mapped_column(default=False)
