@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import and_, or_, select
 
@@ -9,6 +9,8 @@ from database.models.member_model import Booster
 async def update_booster(
     userid: int, status: bool, boosting_since: datetime | None = None
 ):
+    if boosting_since:
+        boosting_since = boosting_since.now()
     async with session.session_maker() as dbsession:
         booster = await dbsession.get(Booster, userid)
         if booster is None:

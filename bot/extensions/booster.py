@@ -43,13 +43,13 @@ class BoosterExt(discord.Cog, ABCExtension):
                 + f"Booster reward slot: **{boost_slot if boost_slot >= 0 else 0} available**"
             )
             embed.colour = discord.Colour.nitro_pink()
-            boost_channel.send(embed=embed)
+            await boost_channel.send(embed=embed)
             await update_booster(after.id, True, after.premium_since)
 
         if boost_role_before and boost_role_after is None:
             embed.description = f"_{after.mention} stopped their server boost!_"
             embed.colour = discord.Colour.dark_red()
-            boost_channel.send(embed=embed)
+            await boost_channel.send(embed=embed)
             await update_booster(after.id, False, after.premium_since)
 
     @guild_only()
