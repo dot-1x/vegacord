@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
@@ -9,7 +10,7 @@ from bot.logs.custom_logger import BotLogger
 from bot.utils.decorators import is_admin
 from bot.utils.generators import chunk_list
 from bot.utils.misc import build_embed
-from bot.utils.dbutils import update_booster
+from bot.utils.dbutils import bulk_update_booster, update_booster
 
 
 if TYPE_CHECKING:
@@ -115,3 +116,27 @@ class BoosterExt(discord.Cog, ABCExtension):
         await ctx.respond(
             "sucessfully removed user from booster database", ephemeral=True
         )
+
+    @is_admin()
+    @guild_only()
+    @slash_command(
+        name="update-booster",
+        description="bulk update current booster list on database",
+    )
+    async def update_booster(self, ctx: discord.ApplicationContext):
+        boosters = ctx.interaction.guild.premium_subscribers
+        await bulk_update_booster(
+            [
+                {
+                    "userid": member.id,
+                    "boosting_since": (
+                        member.premium_since.now()
+                        if member.premium_since
+                        else datetime.now()
+                    ),
+                    "isboosting": True,
+                }
+                for member in boosters
+            ]
+        )
+        await ctx.respond("Successfully updated current booster list", ephemeral=True)

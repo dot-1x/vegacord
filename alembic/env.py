@@ -33,7 +33,7 @@ target_metadata = BaseModel.metadata
 def get_database_uri():
     if settings.ENVIRONMENT == "PRD":
         return settings.MAIN_DB_URI
-    return settings.SQLITE_DB_URI
+    return settings.TEST_DB_URI
 
 
 def do_run_migrations(connection):

@@ -1,10 +1,36 @@
 from datetime import datetime, timedelta
+from typing import TypedDict
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
+from sqlalchemy.dialects.postgresql import insert as postgreinsert
 
 from bot.exceptions import MemberAlreadyChangedError
 from database.core import session
 from database.models.member_model import Booster, Member as MemberModel
+
+BoosterDict = TypedDict(
+    "BoosterDict", {"userid": int, "isboosting": bool, "boosting_since": datetime}
+)
+
+
+async def bulk_update_booster(members: list[BoosterDict]):
+    ids = {member["userid"] for member in members}
+    async with session.session_maker() as dbsession:
+        await dbsession.execute(
+            update(Booster).where(
+                Booster.userid.not_in(ids), Booster.isboosting == True
+            ),
+            {"isboosting": False, "expired_since": datetime.now()},
+        )
+        await dbsession.execute(
+            postgreinsert(Booster).on_conflict_do_nothing(),
+            members,
+        )
+        await dbsession.execute(
+            update(Booster),
+            members,
+        )
+        await dbsession.commit()
 
 
 async def update_booster(
