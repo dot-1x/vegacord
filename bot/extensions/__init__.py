@@ -4,13 +4,14 @@ from discord import Cog
 from logs.log import get_logger
 
 
+from bot.extensions.member import MemberExt
 from bot.extensions.booster import BoosterExt
 
 if TYPE_CHECKING:
     from bot.extensions.abcextension import ABCExtension
     from bot.bot import BaseBot
 
-cogs: list["ABCExtension"] = [BoosterExt]
+cogs: list["ABCExtension"] = [BoosterExt, MemberExt]
 _log = get_logger("EVENTS")
 
 

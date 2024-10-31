@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy import or_, select
 
+from bot.exceptions import MemberAlreadyChangedError
 from database.core import session
 from database.models.member_model import Booster, Member as MemberModel
 
@@ -46,9 +47,20 @@ async def update_member(userid: int, ign: str, server: int):
         member = await dbsession.get(MemberModel, userid)
         if member is None:
             member = MemberModel(userid=userid, ingame=ign, server=server)
-        else:
+            dbsession.add(member)
+        elif member and member.has_changed is False:
             member.userid = userid
             member.ingame = ign
             member.server = server
             member.has_changed = True
+        else:
+            raise MemberAlreadyChangedError(
+                "You have already changed your data before!"
+            )
         await dbsession.commit()
+
+
+async def get_member_data(userid: int):
+    async with session.session_maker() as dbsession:
+        member = await dbsession.get(MemberModel, userid)
+    return member
