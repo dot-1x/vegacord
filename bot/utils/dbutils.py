@@ -76,7 +76,6 @@ async def update_member(userid: int, ign: str, server: int):
             member = MemberModel(userid=userid, ingame=ign, server=server)
             dbsession.add(member)
         elif member and member.has_changed is False:
-            member.userid = userid
             member.ingame = ign
             member.server = server
             member.has_changed = True

@@ -10,7 +10,7 @@ from bot.logs.custom_logger import BotLogger
 from bot.utils.decorators import is_admin
 from bot.utils.generators import chunk_list
 from bot.utils.misc import build_embed
-from bot.utils.dbutils import bulk_update_booster, update_booster
+from bot.utils.dbutils import bulk_update_booster, get_valid_booster, update_booster
 
 
 if TYPE_CHECKING:
@@ -59,10 +59,13 @@ class BoosterExt(discord.Cog, ABCExtension):
         description="Command to check server booster list and valid registered booster reward",
     )
     async def check_booster(self, ctx: discord.ApplicationContext):
-        boosters = ctx.interaction.guild.premium_subscribers
+        boosters = await get_valid_booster()
         booster_text = "\n".join(
-            "    ".join(member.mention for member in booster)
-            for booster in chunk_list(boosters)
+            (
+                f"> <@{member.userid}>\n"
+                + f"> boosted since: <t:{member.boosting_since.timestamp():.0f}>\n"
+            )
+            for member in boosters
         )
         embed = discord.Embed(
             title="Current booster", color=discord.Colour.nitro_pink()
@@ -124,6 +127,7 @@ class BoosterExt(discord.Cog, ABCExtension):
         description="bulk update current booster list on database",
     )
     async def update_booster(self, ctx: discord.ApplicationContext):
+        await ctx.defer(ephemeral=True)
         boosters = ctx.interaction.guild.premium_subscribers
         await bulk_update_booster(
             [
