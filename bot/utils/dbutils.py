@@ -24,6 +24,7 @@ async def update_booster(
             else:
                 booster.expired_since = datetime.now()
         await dbsession.commit()
+    return booster
 
 
 async def get_valid_booster():

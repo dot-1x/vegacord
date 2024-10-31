@@ -3,5 +3,7 @@ __pycache__
 .env
 *.log
 *.out
+*.sqlite
+
 debug.py
 PID

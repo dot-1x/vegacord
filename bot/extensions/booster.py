@@ -77,12 +77,13 @@ class BoosterExt(discord.Cog, ABCExtension):
     @is_admin()
     @guild_only()
     @slash_command(
-        name="register-booster", description="Register a member to booster list"
+        name="register-booster",
+        description="Register a member to booster list on database",
     )
     @option(
         name="member",
         type=discord.Member,
-        description="Select member to register booster list on database",
+        description="Select member to register",
     )
     async def register_booster(
         self, ctx: discord.ApplicationContext, member: discord.Member
@@ -90,4 +91,27 @@ class BoosterExt(discord.Cog, ABCExtension):
         await ctx.defer(ephemeral=True)
         if member.get_role(ctx.interaction.guild.premium_subscriber_role.id) is None:
             return await ctx.respond("user is not valid booster", ephemeral=True)
+        await update_booster(member.id, True, member.premium_since)
         await ctx.respond("sucessfully added user to booster database", ephemeral=True)
+
+    @is_admin()
+    @guild_only()
+    @slash_command(
+        name="remove-booster",
+        description="Remove a member from booster list on database",
+    )
+    @option(
+        name="member",
+        type=discord.Member,
+        description="Select member to remove",
+    )
+    async def remove_booster(
+        self, ctx: discord.ApplicationContext, member: discord.Member
+    ):
+        await ctx.defer(ephemeral=True)
+        if member.get_role(ctx.interaction.guild.premium_subscriber_role.id):
+            return await ctx.respond("user is still valid booster", ephemeral=True)
+        await update_booster(member.id, False, member.premium_since)
+        await ctx.respond(
+            "sucessfully removed user from booster database", ephemeral=True
+        )
