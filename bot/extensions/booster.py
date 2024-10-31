@@ -1,5 +1,4 @@
 from __future__ import annotations
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 import discord
@@ -8,8 +7,7 @@ from discord import guild_only, option, slash_command
 from bot.extensions.abcextension import ABCExtension
 from bot.logs.custom_logger import BotLogger
 from bot.utils.decorators import is_admin
-from bot.utils.generators import chunk_list
-from bot.utils.misc import build_embed
+from bot.utils.misc import build_embed, convert_jakarta
 from bot.utils.dbutils import bulk_update_booster, get_valid_booster, update_booster
 
 
@@ -56,22 +54,25 @@ class BoosterExt(discord.Cog, ABCExtension):
     @guild_only()
     @slash_command(
         name="boosters",
-        description="Command to check server booster list and valid registered booster reward",
+        description="Command to check server booster list and valid booster reward",
     )
     async def check_booster(self, ctx: discord.ApplicationContext):
         boosters = await get_valid_booster()
-        booster_text = "\n".join(
-            (
-                f"> <@{member.userid}>\n"
-                + f"> boosted since: <t:{member.boosting_since.timestamp():.0f}>\n"
+        fields = [
+            discord.EmbedField(
+                name=f"Booster {n+1}",
+                value=(
+                    f"> <@{member.userid}>\n"
+                    + f"> boosted since: {member.boosting}\n"
+                    + f"> expired since: {member.expired}"
+                ),
+                inline=True,
             )
-            for member in boosters
-        )
+            for n, member in enumerate(boosters)
+        ]
         embed = discord.Embed(
-            title="Current booster", color=discord.Colour.nitro_pink()
+            title="Current booster", color=discord.Colour.nitro_pink(), fields=fields
         )
-        embed.description = booster_text
-
         return await ctx.respond(
             f"_Currently **{len(boosters)}** members is boosting this server_",
             ephemeral=True,
@@ -133,11 +134,7 @@ class BoosterExt(discord.Cog, ABCExtension):
             [
                 {
                     "userid": member.id,
-                    "boosting_since": (
-                        member.premium_since.now()
-                        if member.premium_since
-                        else datetime.now()
-                    ),
+                    "boosting_since": convert_jakarta(member.premium_since),
                     "isboosting": True,
                 }
                 for member in boosters

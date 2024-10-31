@@ -1,7 +1,7 @@
 from datetime import datetime
 from database.models.base import BaseModel
-from sqlalchemy import BigInteger, DateTime
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import BigInteger, DateTime, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class Booster(BaseModel):
@@ -11,6 +11,20 @@ class Booster(BaseModel):
     boosting_since: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     expired_since: Mapped[datetime | None] = mapped_column(DateTime, default=None)
     isboosting: Mapped[bool] = mapped_column(default=False)
+
+    @property
+    def boosting(self):
+        return (
+            f"<t:{self.boosting_since.timestamp():.0f}>"
+            if self.boosting_since
+            else None
+        )
+
+    @property
+    def expired(self):
+        return (
+            f"<t:{self.expired_since.timestamp():.0f}>" if self.expired_since else None
+        )
 
 
 class Member(BaseModel):

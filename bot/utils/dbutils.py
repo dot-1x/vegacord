@@ -5,6 +5,7 @@ from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgreinsert
 
 from bot.exceptions import MemberAlreadyChangedError
+from bot.utils.misc import convert_jakarta
 from database.core import session
 from database.models.member_model import Booster, Member as MemberModel
 
@@ -37,7 +38,7 @@ async def update_booster(
     userid: int, status: bool, boosting_since: datetime | None = None
 ):
     if boosting_since:
-        boosting_since = boosting_since.now()
+        boosting_since = convert_jakarta(boosting_since)
     async with session.session_maker() as dbsession:
         booster = await dbsession.get(Booster, userid)
         if booster is None:
