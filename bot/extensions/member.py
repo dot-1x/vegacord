@@ -27,7 +27,7 @@ class MemberExt(discord.Cog, ABCExtension):
     @option(name="ign", type=str, description="Your in-game nickname")
     @option(name="server", type=int, description="Your in-game server")
     async def fill_data(self, ctx: discord.ApplicationContext, ign: str, server: int):
-        await ctx.defer(ephemeral=True)
+        await ctx.defer(ephemeral=False)
         try:
             await update_member(ctx.author.id, ign=ign, server=server)
         except MemberAlreadyChangedError:
@@ -37,7 +37,7 @@ class MemberExt(discord.Cog, ABCExtension):
             message=f"> Nickname: {ign}\n> Server: {server}",
         )
         await ctx.respond(
-            "succesfully update your in-game data with", embed=embed, ephemeral=True
+            "succesfully update your in-game data with", embed=embed, ephemeral=False
         )
 
     @guild_only()
