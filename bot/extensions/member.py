@@ -61,7 +61,7 @@ class MemberExt(discord.Cog, ABCExtension):
                 )
             )
         embed = build_embed(
-            title=f"{ctx.author.name} in-game data recorded as:",
+            title=f"{target.name} in-game data recorded as:",
             message=f"> Nickname: {found.ingame}\n> Server: {found.server}",
         )
         return await ctx.respond(embed=embed)
