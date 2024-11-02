@@ -76,12 +76,12 @@ async def update_member(userid: int, ign: str, server: int):
         if member is None:
             member = MemberModel(userid=userid, ingame=ign, server=server)
             dbsession.add(member)
-        elif member and member.has_changed is False:
+        elif member.ingame == ign.strip() and member.server == server:
+            raise MemberUnchanged("Your data remains the same as before")
+        elif member.has_changed is False:
             member.ingame = ign
             member.server = server
             member.has_changed = True
-        elif member.ingame == ign.strip() and member.server == server:
-            raise MemberUnchanged("Your data remains the same as before")
         else:
             raise MemberAlreadyChangedError(
                 "You have already changed your data before!"
