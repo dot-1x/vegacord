@@ -4,7 +4,7 @@ from typing import TypedDict
 from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgreinsert
 
-from bot.exceptions import MemberAlreadyChangedError
+from bot.exceptions import MemberAlreadyChangedError, MemberUnchanged
 from bot.utils.misc import convert_jakarta
 from database.core import session
 from database.models.member_model import Booster, Member as MemberModel
@@ -80,11 +80,14 @@ async def update_member(userid: int, ign: str, server: int):
             member.ingame = ign
             member.server = server
             member.has_changed = True
+        elif member.ingame == ign.strip() and member.server == server:
+            raise MemberUnchanged("Your data remains the same as before")
         else:
             raise MemberAlreadyChangedError(
                 "You have already changed your data before!"
             )
         await dbsession.commit()
+    return member
 
 
 async def get_member_data(userid: int):

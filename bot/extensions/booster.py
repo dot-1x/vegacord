@@ -141,3 +141,23 @@ class BoosterExt(discord.Cog, ABCExtension):
             ]
         )
         await ctx.respond("Successfully updated current booster list", ephemeral=True)
+
+    @is_admin()
+    @guild_only()
+    @slash_command(
+        name="send-booster-reward",
+        description="Command to send DISCORD XP and CHOPPER COINS reward for server boosters",
+    )
+    @option(name="xp", type=int, description="XP reward to send", min_value=1)
+    @option(name="coins", type=int, description="Coins reward to send", min_value=1)
+    async def send_reward(self, ctx: discord.ApplicationContext, xp: int, coins: int):
+        boosters = ctx.interaction.guild.premium_subscribers
+        boost_channel = self.bot.master_guild.get_channel(1219937225618227233)
+        for booster in boosters:
+            msg1 = await boost_channel.send(f"!give-xp {booster.id} {xp}")
+            msg2 = await boost_channel.send(f"!give-coins {booster.id} {coins}")
+            await msg1.delete(delay=3)
+            await msg2.delete(delay=3)
+        await ctx.respond(
+            "sucessfully sending coins and xp to server booster", ephemeral=True
+        )
