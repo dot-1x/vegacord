@@ -171,9 +171,13 @@ class BoosterExt(discord.Cog, ABCExtension):
         embed = build_embed(
             message=f"data not found for {len(members['notfound'])} user(s)\n" + message
         )
-        buffer = BytesIO()
-        buffer.write(b"userid,ign,server")
-        for member in members["found"]:
-            buffer.write(f"{member.userid},{member.ingame},{member.server}\n".encode())
+        text = "userid,ign,server\n"
+        boosters = "\n".join(
+            [
+                f"{member.userid},{member.ingame},{member.server}"
+                for member in members["found"]
+            ]
+        )
+        buffer = BytesIO((text + boosters).encode())
         file = discord.File(fp=buffer, filename="booster-data.csv")
         return await ctx.respond(embed=embed, ephemeral=True, file=file)
