@@ -52,8 +52,9 @@ async def update_booster(
             booster.isboosting = status
             if status:
                 booster.boosting_since = boosting_since
+                booster.expired_since = None
             else:
-                booster.expired_since = datetime.now()
+                booster.expired_since = booster.expired_since or datetime.now()
         await dbsession.commit()
     return booster
 
@@ -70,12 +71,7 @@ async def get_valid_booster(with_data=False) -> Sequence[Booster] | BoosterData:
     async with session.session_maker() as dbsession:
         result = await dbsession.scalars(
             select(Booster)
-            .where(
-                or_(
-                    Booster.isboosting,
-                    Booster.expired_since >= (datetime.now() - timedelta(days=7)),
-                )
-            )
+            .where(Booster.isboosting)
             .order_by(Booster.boosting_since.asc())
             .limit(20)
         )
