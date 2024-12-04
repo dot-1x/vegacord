@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import TypedDict
+from typing import Literal, Sequence, TypedDict, overload
 
 from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert as postgreinsert
@@ -11,6 +11,10 @@ from database.models.member_model import Booster, Member as MemberModel
 
 BoosterDict = TypedDict(
     "BoosterDict", {"userid": int, "isboosting": bool, "boosting_since": datetime}
+)
+
+BoosterData = TypedDict(
+    "BoosterData", {"found": Sequence[MemberModel], "notfound": set[int]}
 )
 
 
@@ -54,7 +58,15 @@ async def update_booster(
     return booster
 
 
-async def get_valid_booster():
+@overload
+async def get_valid_booster(with_data: Literal[False] = False) -> Sequence[Booster]: ...
+
+
+@overload
+async def get_valid_booster(with_data: Literal[True]) -> BoosterData: ...
+
+
+async def get_valid_booster(with_data=False) -> Sequence[Booster] | BoosterData:
     async with session.session_maker() as dbsession:
         result = await dbsession.scalars(
             select(Booster)
@@ -67,7 +79,16 @@ async def get_valid_booster():
             .order_by(Booster.boosting_since.asc())
             .limit(20)
         )
-        return result.all()
+        if not with_data:
+            return result.all()
+        members = result.all()
+        members_id = {member.userid for member in members}
+        res_data = await dbsession.scalars(
+            select(MemberModel).where(MemberModel.userid.in_(members_id))
+        )
+        data = res_data.all()
+        data_id = {user.userid for user in data}
+        return {"found": data, "notfound": members_id - data_id}
 
 
 async def update_member(userid: int, ign: str, server: int):

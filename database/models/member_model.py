@@ -26,6 +26,10 @@ class Booster(BaseModel):
             f"<t:{self.expired_since.timestamp():.0f}>" if self.expired_since else None
         )
 
+    @property
+    def mention(self):
+        return f"<@{self.userid}>"
+
 
 class Member(BaseModel):
     __tablename__ = "members"
@@ -34,3 +38,7 @@ class Member(BaseModel):
     ingame: Mapped[str] = mapped_column()
     server: Mapped[int] = mapped_column()
     has_changed: Mapped[bool] = mapped_column(default=False)
+
+    @property
+    def mention(self):
+        return f"<@{self.userid}>"

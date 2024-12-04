@@ -1,4 +1,5 @@
 from __future__ import annotations
+from io import BytesIO
 from typing import TYPE_CHECKING
 
 import discord
@@ -8,7 +9,11 @@ from bot.extensions.abcextension import ABCExtension
 from bot.logs.custom_logger import BotLogger
 from bot.utils.decorators import is_admin
 from bot.utils.misc import build_embed, convert_jakarta
-from bot.utils.dbutils import bulk_update_booster, get_valid_booster, update_booster
+from bot.utils.dbutils import (
+    bulk_update_booster,
+    get_valid_booster,
+    update_booster,
+)
 
 
 if TYPE_CHECKING:
@@ -34,10 +39,10 @@ class BoosterExt(discord.Cog, ABCExtension):
         boost_role_before = before.get_role(premium_role.id)
         embed = build_embed(title="Booster notice!")
         if boost_role_after and boost_role_before is None:
-            boost_slot = 20 - len(self.bot.master_guild.premium_subscribers)
-
+            boosters = await get_valid_booster()
+            boost_slot = 20 - len(boosters)
             embed.description = (
-                f"_{after.mention} has just boosted the server!_\n"
+                f"_{after.mention} just boosted the server!_\n"
                 + "Thank you for your boost!\n"
                 + f"Booster reward slot: **{boost_slot if boost_slot >= 0 else 0} available**"
             )
@@ -110,11 +115,24 @@ class BoosterExt(discord.Cog, ABCExtension):
         type=discord.Member,
         description="Select member to remove",
     )
+    @option(
+        name="force",
+        type=bool,
+        description="Force to remove even user is having booster role",
+        default=False,
+        required=False,
+    )
     async def remove_booster(
-        self, ctx: discord.ApplicationContext, member: discord.Member
+        self,
+        ctx: discord.ApplicationContext,
+        member: discord.Member,
+        force: bool = False,
     ):
         await ctx.defer(ephemeral=True)
-        if member.get_role(ctx.interaction.guild.premium_subscriber_role.id):
+        if (
+            member.get_role(ctx.interaction.guild.premium_subscriber_role.id)
+            and not force
+        ):
             return await ctx.respond("user is still valid booster", ephemeral=True)
         await update_booster(member.id, False, member.premium_since)
         await ctx.respond(
@@ -145,19 +163,19 @@ class BoosterExt(discord.Cog, ABCExtension):
     @is_admin()
     @guild_only()
     @slash_command(
-        name="send-booster-reward",
-        description="Command to send DISCORD XP and CHOPPER COINS reward for server boosters",
+        name="get-booster-data", description="command to get booster data in csv"
     )
-    @option(name="xp", type=int, description="XP reward to send", min_value=1)
-    @option(name="coins", type=int, description="Coins reward to send", min_value=1)
-    async def send_reward(self, ctx: discord.ApplicationContext, xp: int, coins: int):
-        boosters = ctx.interaction.guild.premium_subscribers
-        boost_channel = self.bot.master_guild.get_channel(1219937225618227233)
-        for booster in boosters:
-            msg1 = await boost_channel.send(f"!give-xp {booster.id} {xp}")
-            msg2 = await boost_channel.send(f"!give-coins {booster.id} {coins}")
-            await msg1.delete(delay=3)
-            await msg2.delete(delay=3)
-        await ctx.respond(
-            "sucessfully sending coins and xp to server booster", ephemeral=True
+    async def get_booster_data(self, ctx: discord.ApplicationContext):
+        members = await get_valid_booster(with_data=True)
+        message = "\n".join(f"<@{user}>" for user in members["notfound"])
+        embed = build_embed(
+            message=f"data not found for {len(members['notfound'])} user(s)\n" + message
         )
+        with BytesIO() as buffer:
+            buffer.write(b"userid,ign,server")
+            for member in members["found"]:
+                buffer.write(
+                    f"{member.userid},{member.ingame},{member.server}\n".encode()
+                )
+            file = discord.File(fp=buffer, filename="booster-data.csv")
+            return await ctx.respond(embed=embed, ephemeral=True, file=file)
